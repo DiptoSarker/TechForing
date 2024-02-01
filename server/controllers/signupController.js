@@ -1,5 +1,13 @@
 const bcrypt = require("bcrypt");
 const User = require("../models/User");
+const jwt = require("jsonwebtoken");
+
+const maxAge = 3 * 24 * 60 * 60;
+const createtoken = (id) => {
+  return jwt.sign({ id }, "pritam sarker dipto for techforing", {
+    expiresIn: maxAge,
+  });
+};
 
 const signupController = async (req, res) => {
   const { username, email, password } = req.body;
@@ -14,8 +22,11 @@ const signupController = async (req, res) => {
 
     const newUser = new User({ username, email, password: hashedPassword });
     await newUser.save();
-    res.json({ message: "User signed up successfully", user: newUser });
+    const token = createtoken(newUser._id);
+    res.cookie("jwt", token, { httpOnly: true, maxAge: maxAge * 1000 });
+    res.json({ message: "User signed up successfully", user: newUser._id });
   } catch (error) {
+    console.error("Error in signupController:", error);
     res
       .status(500)
       .json({ message: "Error signing up user", error: error.message });
